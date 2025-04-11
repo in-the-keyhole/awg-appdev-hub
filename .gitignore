@@ -1,0 +1,7 @@
+.task/
+.helm/
+.terraform/
+.helmsman-tmp/
+.tmp/
+*.tfstate
+*.tfstate.backup
