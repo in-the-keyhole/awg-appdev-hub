@@ -1,3 +1,4 @@
+# public DNS zone
 resource azurerm_dns_zone pub {
   name = var.dns_zone_name
   tags = var.default_tags
@@ -76,7 +77,7 @@ resource azurerm_subnet bastion {
   address_prefixes = var.bastion_vnet_subnet_address_prefixes
 }
 
-resource azurerm_private_dns_zone "int" {
+resource azurerm_private_dns_zone int {
   name = var.int_dns_zone_name
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
@@ -86,7 +87,8 @@ resource azurerm_private_dns_zone "int" {
   }
 }
 
-resource azurerm_private_dns_zone_virtual_network_link private {
+# link the internal DNS zone to the VNet
+resource azurerm_private_dns_zone_virtual_network_link int {
   name = "${azurerm_private_dns_zone.int.name}-2-${azurerm_virtual_network.hub.name}"
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
@@ -96,8 +98,13 @@ resource azurerm_private_dns_zone_virtual_network_link private {
   lifecycle {
     ignore_changes = [tags]
   }
+
+  depends_on = [ 
+    azurerm_private_dns_zone.int
+  ]
 }
 
+# allows private resolution of DNS within the VNet
 resource azurerm_private_dns_resolver hub {
   name = var.default_name
   tags = var.default_tags
@@ -182,16 +189,19 @@ locals {
     "privatelink.queue.core.windows.net",
     "privatelink.table.core.windows.net",
     "privatelink.dfs.core.windows.net",
+    "privatelink.web.core.windows.net",
     "privatelink.vaultcore.azure.net",
     "privatelink.database.windows.net",
     "privatelink.azuredatabricks.net",
     "privatelink.cognitiveservices.azure.com",
     "privatelink.datafactory.azure.net",
     "privatelink.ncus.backup.windowsazure.com",
-    "privatelink.openai.azure.com"
+    "privatelink.openai.azure.com",
+    "privatelink.azurecr.io"
   ]
 }
 
+# generate a private DNS zone for each item in the name table
 resource azurerm_private_dns_zone privatelink-zones {
   count = length(local.privatelink-zone-names)
   name = local.privatelink-zone-names[count.index]
@@ -203,21 +213,23 @@ resource azurerm_private_dns_zone privatelink-zones {
   }
 }
 
+# calculate map of private zone name to resource
+locals {
+  privatelink-zones-by-name = {
+    for i in azurerm_private_dns_zone.privatelink-zones : i.name => i
+  }
+}
+
+# link each private DNS zone with the hub network
 resource azurerm_private_dns_zone_virtual_network_link privatelink-links {
   count = length(local.privatelink-zone-names)
-  name = "${local.privatelink-zone-names[count.index]}-2-${azurerm_virtual_network.hub.name}"
+  name = "${local.privatelink-zones-by-name[local.privatelink-zone-names[count.index]].name}-2-${azurerm_virtual_network.hub.name}"
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
-  private_dns_zone_name = local.privatelink-zone-names[count.index]
+  private_dns_zone_name = local.privatelink-zones-by-name[local.privatelink-zone-names[count.index]].name
   virtual_network_id = azurerm_virtual_network.hub.id
 
   lifecycle {
     ignore_changes = [tags]
-  }
-}
-
-locals {
-  privatelink-zones-by-name = {
-    for i in azurerm_private_dns_zone.privatelink-zones : i.name => i
   }
 }

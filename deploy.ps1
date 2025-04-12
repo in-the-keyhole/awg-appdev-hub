@@ -8,11 +8,11 @@ param(
     [ValidateSet('all', 'bicep', 'tf')]
     [string]$Stage = 'all',
 
-    [string]$TfStateResourceGroupName = "tfstate",
-    [string]$TfStateStorageAccountName = "awgappdevhubtfstate",
+    [Parameter(Mandatory)][string]$TfStateResourceGroupName,
+    [Parameter(Mandatory)][string]$TfStateStorageAccountName,
 
-    [string]$DefaultName = 'awg-hub',
-    [string]$ReleaseName = '1.0.0',
+    [Parameter(Mandatory)][string]$DefaultName,
+    [Parameter(Mandatory)][string]$ReleaseName,
     [hashtable]$DefaultTags = @{},
     
     [Parameter(Mandatory)][string]$MetadataLocation,
@@ -42,17 +42,15 @@ if (!$SubscriptionId) {
 
 if ($Stage -eq 'all' -or $Stage -eq 'bicep') {
     # create tfstate resource group
-    az group create -l $MetadataLocation -n rg-$DefaultName-tfstate `
+    az group create -l $MetadataLocation -n $TfStateResourceGroupName `
     ; if ($LASTEXITCODE -ne 0) { throw $LASTEXITCODE }
 
     # use bicep for initial tfstate deployment
     az deployment group create `
-        --resource-group rg-$DefaultName-tfstate `
+        --resource-group $TfStateResourceGroupName `
         --template-file tfstate.bicep `
-        --parameters defaultName="$DefaultName" `
-        --parameters releaseName="$ReleaseName" `
-        --parameters metadataLocation="$MetadataLocation" `
         --parameters resourceLocation="$ResourceLocation" `
+        --parameters storageAccountName="$TfStateStorageAccountName" `
         ; if ($LASTEXITCODE -ne 0) { throw $LASTEXITCODE }
 }
 
@@ -78,23 +76,25 @@ if ($Stage -eq 'all' -or $Stage -eq 'tf') {
         dns_inbound_vnet_subnet_address_prefixes = @( $DnsInboundVnetSubnetAddressPrefix )
         dns_outbound_vnet_subnet_address_prefixes = @( $DnsOutboundVnetSubnetAddressPrefix )
         bastion_vnet_subnet_address_prefixes = @( $BastionVnetSubnetAddressPrefix )
-    } | ConvertTo-Json | Out-File .tmp/$DefaultName.tfvars.json
+    } | ConvertTo-Json | Out-File .tmp/${DefaultName}.tfvars.json
 
     Push-Location .\terraform
 
     try {
         # configure terraform against target environment
         terraform init -reconfigure `
-            -backend-config "subscription_id=$SubscriptionId" `
-            -backend-config "resource_group_name=$TfStateResourceGroupName" `
-            -backend-config "storage_account_name=$TfStateStorageAccountName" `
+            -backend-config "subscription_id=${SubscriptionId}" `
+            -backend-config "resource_group_name=${TfStateResourceGroupName}" `
+            -backend-config "storage_account_name=${TfStateStorageAccountName}" `
             -backend-config "container_name=tfstate" `
-            -backend-config "key=${DefaultName}.tfstate"; if ($LASTEXITCODE -ne 0) { throw $LASTEXITCODE }
+            -backend-config "key=${DefaultName}.tfstate" `
+            ; if ($LASTEXITCODE -ne 0) { throw $LASTEXITCODE }
 
         # apply terraform against target environment
         terraform apply `
-            -var-file="../.tmp/$DefaultName.tfvars.json" `
-            -auto-approve; if ($LASTEXITCODE -ne 0) { throw $LASTEXITCODE }
+            -var-file="../.tmp/${DefaultName}.tfvars.json" `
+            -auto-approve `
+            ; if ($LASTEXITCODE -ne 0) { throw $LASTEXITCODE }
 
     } finally {
         Pop-Location

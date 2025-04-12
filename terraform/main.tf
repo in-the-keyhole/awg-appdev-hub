@@ -9,6 +9,9 @@ terraform {
       version = "~>2.3"
     }
   }
+  backend azurerm {
+    
+  }
 }
 
 provider azurerm {

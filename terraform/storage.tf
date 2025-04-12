@@ -15,35 +15,36 @@ resource azurerm_storage_account hub {
 }
 
 locals {
-  storage-subresources = [
-    "blob",
-    "file", 
-    "table", 
-    "queue", 
-    "web", 
-    "dfs", 
-  ]
+  storage-subresources = {
+    "blob" = "privatelink.blob.core.windows.net",
+    "file" = "privatelink.file.core.windows.net",
+    "table" = "privatelink.table.core.windows.net",
+    "queue" = "privatelink.queue.core.windows.net",
+    "web" = "privatelink.web.core.windows.net",
+    "dfs" = "privatelink.dfs.core.windows.net",
+  }
 }
 
 resource azurerm_private_endpoint storage_account {
-  count = length(local.storage-subresources)
-  name = "${azurerm_storage_account.hub.name}-${local.storage-subresources[count.index]}-2-${azurerm_virtual_network.hub.name}"
+  for_each = local.storage-subresources
+
+  name = "${azurerm_storage_account.hub.name}-${each.key}-2-${azurerm_virtual_network.hub.name}"
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
   location = azurerm_virtual_network.hub.location
   subnet_id = azurerm_subnet.default.id
 
   private_service_connection {
-    name = "${azurerm_storage_account.hub.name}-${local.storage-subresources[count.index]}-2-${azurerm_virtual_network.hub.name}"
+    name = "${azurerm_storage_account.hub.name}-${each.key}-2-${azurerm_virtual_network.hub.name}"
     private_connection_resource_id = azurerm_storage_account.hub.id
-    subresource_names = [local.storage-subresources[count.index]]
+    subresource_names = [each.key]
     is_manual_connection = false
   }
 
   private_dns_zone_group {
-    name = "${azurerm_storage_account.hub.name}-${local.storage-subresources[count.index]}-2-${azurerm_virtual_network.hub.name}"
+    name = "${azurerm_storage_account.hub.name}-${each.key}-2-${azurerm_virtual_network.hub.name}"
     private_dns_zone_ids = [
-      local.privatelink-zones-by-name["privatelink.blob.core.windows.net"].id
+      local.privatelink-zones-by-name[each.value].id
     ]
   }
 

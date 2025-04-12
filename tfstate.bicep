@@ -1,17 +1,8 @@
-param defaultName string = 'awg-appdevhub'
-param releaseName string = '1.0.0'
-param defaultTags object = {}
-param metadataLocation string = 'westus'
-param resourceLocation string = 'eastus'
-
-var tags = union(defaultTags, {
-    defaultName: defaultName
-    releaseName: releaseName
-})
+param storageAccountName string
+param resourceLocation string
 
 resource tfstate 'Microsoft.Storage/storageAccounts@2024-01-01' = {
-    name: replace('${defaultName}tfstate', '-', '')
-    tags: tags
+    name: storageAccountName
     location: resourceLocation
     kind: 'BlobStorage'
     sku: { name: 'Standard_LRS' }
