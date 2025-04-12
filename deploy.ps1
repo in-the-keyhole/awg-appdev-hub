@@ -11,7 +11,7 @@ param(
     [string]$TfStateResourceGroupName = "tfstate",
     [string]$TfStateStorageAccountName = "awgappdevhubtfstate",
 
-    [string]$DefaultName = 'awg-appdevhub',
+    [string]$DefaultName = 'awg-hub',
     [string]$ReleaseName = '1.0.0',
     [hashtable]$DefaultTags = @{},
     
@@ -22,8 +22,10 @@ param(
     [Parameter(Mandatory)][string]$InternalDnsZoneName,
 
     [Parameter(Mandatory)][string]$VnetAddressPrefix,
-    [Parameter(Mandatory)][string]$DefaultVnetSubnetAddressPrefix,
     [Parameter(Mandatory)][string]$PrivateVnetSubnetAddressPrefix,
+    [Parameter(Mandatory)][string]$DefaultVnetSubnetAddressPrefix,
+    [Parameter(Mandatory)][string]$DnsInboundVnetSubnetAddressPrefix,
+    [Parameter(Mandatory)][string]$DnsOutboundVnetSubnetAddressPrefix,
     [Parameter(Mandatory)][string]$BastionVnetSubnetAddressPrefix
 )
 
@@ -73,6 +75,8 @@ if ($Stage -eq 'all' -or $Stage -eq 'tf') {
         vnet_address_prefixes = @( $VnetAddressPrefix )
         default_vnet_subnet_address_prefixes = @( $DefaultVnetSubnetAddressPrefix )
         private_vnet_subnet_address_prefixes = @( $PrivateVnetSubnetAddressPrefix )
+        dns_inbound_vnet_subnet_address_prefixes = @( $DnsInboundVnetSubnetAddressPrefix )
+        dns_outbound_vnet_subnet_address_prefixes = @( $DnsOutboundVnetSubnetAddressPrefix )
         bastion_vnet_subnet_address_prefixes = @( $BastionVnetSubnetAddressPrefix )
     } | ConvertTo-Json | Out-File .tmp/$DefaultName.tfvars.json
 
