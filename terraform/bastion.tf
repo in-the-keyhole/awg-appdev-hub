@@ -21,6 +21,28 @@ resource azurerm_public_ip bastion {
   }
 }
 
+resource azurerm_network_security_group bastion {
+  name = "${var.default_name}-bastion"
+  resource_group_name = azurerm_resource_group.bastion.name
+  location = var.resource_location
+
+  security_rule {
+    name = "SSH"
+    priority = 1001
+    direction = "Inbound"
+    access = "Allow"
+    protocol = "Tcp"
+    source_port_range = "*"
+    destination_port_range = "22"
+    source_address_prefix = "*"
+    destination_address_prefix = "*"
+  }
+
+  lifecycle {
+    ignore_changes = [ tags ]
+  }
+}
+
 resource azurerm_network_interface bastion {
   name = "${var.default_name}-bastion"
   resource_group_name = azurerm_resource_group.bastion.name
@@ -36,6 +58,11 @@ resource azurerm_network_interface bastion {
   lifecycle {
     ignore_changes = [tags]
   }
+}
+
+resource azurerm_network_interface_security_group_association bastion {
+  network_interface_id = azurerm_network_interface.bastion.id
+  network_security_group_id = azurerm_network_security_group.bastion.id
 }
 
 resource azurerm_linux_virtual_machine bastion {

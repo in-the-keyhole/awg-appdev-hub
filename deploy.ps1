@@ -26,7 +26,9 @@ param(
     [Parameter(Mandatory)][string]$DefaultVnetSubnetAddressPrefix,
     [Parameter(Mandatory)][string]$DnsInboundVnetSubnetAddressPrefix,
     [Parameter(Mandatory)][string]$DnsOutboundVnetSubnetAddressPrefix,
-    [Parameter(Mandatory)][string]$BastionVnetSubnetAddressPrefix
+    [Parameter(Mandatory)][string]$BastionVnetSubnetAddressPrefix,
+
+    [Parameter(Mandatory)][hashtable]$VnetPeers
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,13 +71,14 @@ if ($Stage -eq 'all' -or $Stage -eq 'tf') {
         metadata_location = $MetadataLocation
         resource_location = $ResourceLocation
         dns_zone_name = $DnsZoneName
-        int_dns_zone_name = $InternalDnsZoneName
+        internal_dns_zone_name = $InternalDnsZoneName
         vnet_address_prefixes = @( $VnetAddressPrefix )
         default_vnet_subnet_address_prefixes = @( $DefaultVnetSubnetAddressPrefix )
         private_vnet_subnet_address_prefixes = @( $PrivateVnetSubnetAddressPrefix )
         dns_inbound_vnet_subnet_address_prefixes = @( $DnsInboundVnetSubnetAddressPrefix )
         dns_outbound_vnet_subnet_address_prefixes = @( $DnsOutboundVnetSubnetAddressPrefix )
         bastion_vnet_subnet_address_prefixes = @( $BastionVnetSubnetAddressPrefix )
+        vnet_peers = $VnetPeers
     } | ConvertTo-Json | Out-File .tmp/${DefaultName}.tfvars.json
 
     Push-Location .\terraform

@@ -1,5 +1,5 @@
 # public DNS zone
-resource azurerm_dns_zone pub {
+resource azurerm_dns_zone public {
   name = var.dns_zone_name
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
@@ -77,8 +77,8 @@ resource azurerm_subnet bastion {
   address_prefixes = var.bastion_vnet_subnet_address_prefixes
 }
 
-resource azurerm_private_dns_zone int {
-  name = var.int_dns_zone_name
+resource azurerm_private_dns_zone internal {
+  name = var.internal_dns_zone_name
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
   
@@ -88,11 +88,11 @@ resource azurerm_private_dns_zone int {
 }
 
 # link the internal DNS zone to the VNet
-resource azurerm_private_dns_zone_virtual_network_link int {
-  name = "${azurerm_private_dns_zone.int.name}-2-${azurerm_virtual_network.hub.name}"
+resource azurerm_private_dns_zone_virtual_network_link internal {
+  name = "${azurerm_private_dns_zone.internal.name}-2-${azurerm_virtual_network.hub.name}"
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
-  private_dns_zone_name = azurerm_private_dns_zone.int.name
+  private_dns_zone_name = azurerm_private_dns_zone.internal.name
   virtual_network_id = azurerm_virtual_network.hub.id
   
   lifecycle {
@@ -100,7 +100,7 @@ resource azurerm_private_dns_zone_virtual_network_link int {
   }
 
   depends_on = [ 
-    azurerm_private_dns_zone.int
+    azurerm_private_dns_zone.internal
   ]
 }
 
@@ -183,7 +183,7 @@ resource azurerm_private_dns_resolver_inbound_endpoint default {
 # }
 
 locals {
-  privatelink-zone-names = [
+  privatelink_zone_names = toset([
     "privatelink.blob.core.windows.net",
     "privatelink.file.core.windows.net",
     "privatelink.queue.core.windows.net",
@@ -197,14 +197,16 @@ locals {
     "privatelink.datafactory.azure.net",
     "privatelink.ncus.backup.windowsazure.com",
     "privatelink.openai.azure.com",
-    "privatelink.azurecr.io"
-  ]
+    "privatelink.azurecr.io",
+    "privatelink.southcentralus.azmk8s.io"
+  ])
 }
 
 # generate a private DNS zone for each item in the name table
-resource azurerm_private_dns_zone privatelink-zones {
-  count = length(local.privatelink-zone-names)
-  name = local.privatelink-zone-names[count.index]
+resource azurerm_private_dns_zone privatelink_zones {
+  for_each =  local.privatelink_zone_names
+
+  name = each.key
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
 
@@ -215,21 +217,39 @@ resource azurerm_private_dns_zone privatelink-zones {
 
 # calculate map of private zone name to resource
 locals {
-  privatelink-zones-by-name = {
-    for i in azurerm_private_dns_zone.privatelink-zones : i.name => i
+  privatelink_zones_by_name = {
+    for i in azurerm_private_dns_zone.privatelink_zones : i.name => i
   }
 }
 
 # link each private DNS zone with the hub network
-resource azurerm_private_dns_zone_virtual_network_link privatelink-links {
-  count = length(local.privatelink-zone-names)
-  name = "${local.privatelink-zones-by-name[local.privatelink-zone-names[count.index]].name}-2-${azurerm_virtual_network.hub.name}"
+resource azurerm_private_dns_zone_virtual_network_link privatelink {
+  for_each =  local.privatelink_zone_names
+
+  name = "${local.privatelink_zones_by_name[each.key].name}-2-${azurerm_virtual_network.hub.name}"
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
-  private_dns_zone_name = local.privatelink-zones-by-name[local.privatelink-zone-names[count.index]].name
+  private_dns_zone_name = local.privatelink_zones_by_name[each.key].name
   virtual_network_id = azurerm_virtual_network.hub.id
 
   lifecycle {
     ignore_changes = [tags]
+  }
+}
+
+# peer the private spoke virtual network with the hub virtual network
+resource azurerm_virtual_network_peering peers {
+  for_each = var.vnet_peers
+
+  name = "${var.default_name}-2-${each.key}"
+  resource_group_name = azurerm_resource_group.hub.name
+  virtual_network_name = azurerm_virtual_network.hub.name
+  remote_virtual_network_id = each.value
+  allow_virtual_network_access = true
+  allow_forwarded_traffic = false
+  allow_gateway_transit = false
+
+  lifecycle {
+    prevent_destroy = true
   }
 }

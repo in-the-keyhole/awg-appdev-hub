@@ -15,8 +15,8 @@ terraform {
 }
 
 provider azurerm {
-  features {}
   subscription_id = var.subscription_id
+  features {}
 }
 
 data azurerm_client_config current {
