@@ -78,7 +78,7 @@ resource azurerm_private_dns_zone privatelink_zones {
 
 # deploys a DNS resolver in the hub that forwards to MS DNS by default and for private zones and then otherwise follows the variable rules
 module dns_resolver {
-  source = "../../awg-appdev-modules/terraform/dns-resolver"
+  source = "github.com/in-the-keyhole/awg-appdev-modules//terraform/dns-resolver?ref=main"
   name = var.default_name
   tags = var.default_tags
   resource_group = azurerm_resource_group.hub
