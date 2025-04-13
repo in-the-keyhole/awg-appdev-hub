@@ -20,12 +20,14 @@ param(
 
     [Parameter(Mandatory)][string]$DnsZoneName,
     [Parameter(Mandatory)][string]$InternalDnsZoneName,
+    [Parameter(Mandatory)][string[]]$DnsResolverAddresses,
+    [Parameter(Mandatory)][hashtable]$DnsResolverRules,
 
+    [Parameter(Mandatory)][string[]]$VnetDnsServers,
     [Parameter(Mandatory)][string]$VnetAddressPrefix,
     [Parameter(Mandatory)][string]$PrivateVnetSubnetAddressPrefix,
     [Parameter(Mandatory)][string]$DefaultVnetSubnetAddressPrefix,
-    [Parameter(Mandatory)][string]$DnsInboundVnetSubnetAddressPrefix,
-    [Parameter(Mandatory)][string]$DnsOutboundVnetSubnetAddressPrefix,
+    [Parameter(Mandatory)][string]$DnsVnetSubnetAddressPrefix,
     [Parameter(Mandatory)][string]$BastionVnetSubnetAddressPrefix,
 
     [Parameter(Mandatory)][hashtable]$VnetPeers
@@ -72,11 +74,13 @@ if ($Stage -eq 'all' -or $Stage -eq 'tf') {
         resource_location = $ResourceLocation
         dns_zone_name = $DnsZoneName
         internal_dns_zone_name = $InternalDnsZoneName
+        dns_resolver_addresses = $DnsResolverAddresses
+        dns_resolver_rules = $DnsResolverRules
+        vnet_dns_servers = $VnetDnsServers
         vnet_address_prefixes = @( $VnetAddressPrefix )
         default_vnet_subnet_address_prefixes = @( $DefaultVnetSubnetAddressPrefix )
         private_vnet_subnet_address_prefixes = @( $PrivateVnetSubnetAddressPrefix )
-        dns_inbound_vnet_subnet_address_prefixes = @( $DnsInboundVnetSubnetAddressPrefix )
-        dns_outbound_vnet_subnet_address_prefixes = @( $DnsOutboundVnetSubnetAddressPrefix )
+        dns_vnet_subnet_address_prefixes = @( $DnsVnetSubnetAddressPrefix )
         bastion_vnet_subnet_address_prefixes = @( $BastionVnetSubnetAddressPrefix )
         vnet_peers = $VnetPeers
     } | ConvertTo-Json | Out-File .tmp/${DefaultName}.tfvars.json
