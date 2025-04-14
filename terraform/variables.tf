@@ -49,10 +49,6 @@ variable vnet_dns_servers {
   type = list(string)
 }
 
-variable vnet_peers {
-  type = map(string)
-}
-
 variable default_vnet_subnet_address_prefixes {
   type = list(string)
 }
@@ -67,4 +63,12 @@ variable dns_vnet_subnet_address_prefixes {
 
 variable bastion_vnet_subnet_address_prefixes {
   type = list(string)
+}
+
+variable vnet_peers {
+  type = map(string)
+}
+
+variable dns_peers {
+  type = map(list(string))
 }

@@ -9,6 +9,21 @@ resource azurerm_dns_zone public {
   }
 }
 
+resource azurerm_dns_ns_record public_delegation {
+  for_each = var.dns_peers
+
+  name = substr(each.key, 0, length(each.key) - length(azurerm_dns_zone.public.name) - 1)
+  tags = var.default_tags
+  resource_group_name = azurerm_dns_zone.public.resource_group_name
+  zone_name = azurerm_dns_zone.public.name
+  records = tolist(each.value)
+  ttl = 300
+
+  lifecycle {
+    ignore_changes = [ tags ]
+  }
+}
+
 resource azurerm_private_dns_zone internal {
   name = var.internal_dns_zone_name
   tags = var.default_tags
@@ -108,6 +123,7 @@ resource azurerm_private_dns_zone_virtual_network_link privatelink {
   resource_group_name = azurerm_resource_group.hub.name
   private_dns_zone_name = local.privatelink_zones_by_name[each.key].name
   virtual_network_id = azurerm_virtual_network.hub.id
+  registration_enabled = false
 
   lifecycle {
     ignore_changes = [tags]

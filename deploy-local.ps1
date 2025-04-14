@@ -40,3 +40,11 @@ param(
     -VnetPeers @{
         "awg-appdev-labs" = "/subscriptions/6190d2d3-f65d-4f7a-939e-ad9829c27fd5/resourceGroups/rg-awg-appdev-labs/providers/Microsoft.Network/virtualNetworks/awg-appdev-labs"
     } `
+    -DnsPeers @{
+        "labs.appdev" = @(
+            "ns1-01.azure-dns.com.",
+            "ns1-01.azure-dns.net.",
+            "ns1-01.azure-dns.org.",
+            "ns1-01.azure-dns.info."
+        )
+    }
