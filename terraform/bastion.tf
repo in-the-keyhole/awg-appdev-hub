@@ -71,7 +71,7 @@ resource azurerm_linux_virtual_machine bastion {
   resource_group_name = azurerm_resource_group.bastion.name
   location = var.resource_location
   network_interface_ids = [azurerm_network_interface.bastion.id]
-  size = "Standard_B1s"
+  size = "Standard_B2s"
   disable_password_authentication = false
 
   os_disk {
