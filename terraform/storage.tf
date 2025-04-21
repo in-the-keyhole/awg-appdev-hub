@@ -40,13 +40,6 @@ resource azurerm_private_endpoint storage_account {
     is_manual_connection = false
   }
 
-  private_dns_zone_group {
-    name = "${azurerm_storage_account.hub.name}-${each.key}-2-${azurerm_virtual_network.hub.name}"
-    private_dns_zone_ids = [
-      local.privatelink_zones_by_name[each.value].id
-    ]
-  }
-
   lifecycle {
     ignore_changes = [tags]
   }
