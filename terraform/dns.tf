@@ -64,6 +64,7 @@ locals {
     "privatelink.azuredatabricks.net",
     "privatelink.cognitiveservices.azure.com",
     "privatelink.datafactory.azure.net",
+    "privatelink.scus.backup.windowsazure.com",
     "privatelink.ncus.backup.windowsazure.com",
     "privatelink.openai.azure.com",
     "privatelink.azurecr.io",
