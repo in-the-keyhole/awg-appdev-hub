@@ -65,14 +65,40 @@ resource azurerm_network_interface_security_group_association bastion {
   network_security_group_id = azurerm_network_security_group.bastion.id
 }
 
+data template_cloudinit_config bastion {
+  gzip = true
+  base64_encode = true
+
+  part {
+    content_type = "text/cloud-config"
+    content = replace(<<-EOF
+      #cloud-config
+      packages:
+      - apt-utils
+      EOF
+      , "\r\n", "\n")
+  }
+}
+
 resource azurerm_linux_virtual_machine bastion {
   name = "${var.default_name}-bastion"
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.bastion.name
   location = var.resource_location
-  network_interface_ids = [azurerm_network_interface.bastion.id]
+  
   size = "Standard_B2s"
+  network_interface_ids = [azurerm_network_interface.bastion.id]
   disable_password_authentication = false
+  secure_boot_enabled = true
+  custom_data = data.template_cloudinit_config.bastion.rendered
+  
+  computer_name  = "${var.default_name}-bastion"
+  admin_username = "sysadmin"
+  admin_password = base64decode("SjY4TnhTOUcyUXhHczBHNyE=")
+
+  identity {
+    type = "SystemAssigned"
+  }
 
   os_disk {
     name = "${var.default_name}-bastion-osdisk"
@@ -82,16 +108,37 @@ resource azurerm_linux_virtual_machine bastion {
   
   source_image_reference {
     publisher = "Canonical"
-    offer = "0001-com-ubuntu-server-jammy"
-    sku = "22_04-lts-gen2"
+    offer = "ubuntu-24_04-lts"
+    sku = "server"
     version = "latest"
   }
-  
-  computer_name  = "${var.default_name}-bastion"
-  admin_username = "sysadmin"
-  admin_password = base64decode("SjY4TnhTOUcyUXhHczBHNyE=")
+
+  boot_diagnostics {
+    
+  }
+
+  lifecycle {
+    ignore_changes = [tags, identity]
+  }
+}
+
+resource azurerm_virtual_machine_extension bastion_aad_login {
+  name = "AADSSHLogin"
+  tags = var.default_tags
+
+  virtual_machine_id = azurerm_linux_virtual_machine.bastion.id
+  publisher = "Microsoft.Azure.ActiveDirectory"
+  type = "AADSSHLoginForLinux"
+  type_handler_version = "1.0"
+  auto_upgrade_minor_version = true
 
   lifecycle {
     ignore_changes = [tags]
   }
+}
+
+resource azurerm_role_assignment bastion_aad_admin {
+  role_definition_name = "Virtual Machine Administrator Login"
+  scope = azurerm_linux_virtual_machine.bastion.id
+  principal_id = data.azurerm_client_config.current.object_id
 }

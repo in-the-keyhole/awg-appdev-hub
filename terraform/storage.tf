@@ -41,6 +41,6 @@ resource azurerm_private_endpoint storage_account {
   }
 
   lifecycle {
-    ignore_changes = [tags]
+    ignore_changes = [tags, private_dns_zone_group]
   }
 }

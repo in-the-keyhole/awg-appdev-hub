@@ -11,8 +11,8 @@ param(
 
 .\deploy.ps1 `
     -Stage $Stage `
-    -TfStateResourceGroupName "rg-appdev-tfstate" `
-    -TfStateStorageAccountName "appdevtfstate" `
+    -TfStateResourceGroupName "rg-awg-hub-tfstate" `
+    -TfStateStorageAccountName "awghubtfstate" `
     -DefaultName "awg-hub" `
     -ReleaseName "1.0.0" `
     -DefaultTags @{} `

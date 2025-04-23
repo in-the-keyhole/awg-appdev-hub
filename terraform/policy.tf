@@ -49,17 +49,29 @@ resource azurerm_subscription_policy_assignment deploy_private_dns_zones {
   }
 }
 
-resource azurerm_subscription_policy_remediation deploy_private_dns_zones {
-  for_each = { for k, v in local.deploy_private_dns_zones.properties.policyDefinitions : v.policyDefinitionReferenceId => v }
+# resource azurerm_subscription_policy_remediation deploy_private_dns_zones {
+#   for_each = { for k, v in local.deploy_private_dns_zones.properties.policyDefinitions : v.policyDefinitionReferenceId => v }
 
-  name = "deploy_private_dns_zones__${replace(lower(each.key), "-", "_")}"
-  subscription_id = "/subscriptions/${var.subscription_id}"
-  policy_assignment_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.id
-  policy_definition_reference_id = each.key
+#   name = "deploy_private_dns_zones__${replace(lower(each.key), "-", "_")}"
+#   subscription_id = "/subscriptions/${var.subscription_id}"
+#   policy_assignment_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.id
+#   policy_definition_reference_id = lower(each.key)
+# }
+
+resource azurerm_role_assignment deploy_private_dns_zones_contributor {
+  role_definition_name = "Contributor"
+  scope = "/subscriptions/${var.subscription_id}"
+  principal_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.identity[0].principal_id
 }
 
-resource azurerm_role_assignment deploy_private_dns_zones {
+resource azurerm_role_assignment deploy_private_dns_zones_private_dns_contributor {
   role_definition_name = "Private DNS Zone Contributor"
-  scope = azurerm_resource_group.hub.id
+  scope = "/subscriptions/${var.subscription_id}"
+  principal_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.identity[0].principal_id
+}
+
+resource azurerm_role_assignment deploy_private_dns_zones_network_contributor {
+  role_definition_name = "Network Contributor"
+  scope = "/subscriptions/${var.subscription_id}"
   principal_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.identity[0].principal_id
 }

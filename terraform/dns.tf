@@ -28,7 +28,7 @@ resource azurerm_private_dns_zone internal {
   name = var.internal_dns_zone_name
   tags = var.default_tags
   resource_group_name = azurerm_resource_group.hub.name
-  
+
   lifecycle {
     ignore_changes = [tags]
   }
@@ -41,6 +41,7 @@ resource azurerm_private_dns_zone_virtual_network_link internal {
   resource_group_name = azurerm_resource_group.hub.name
   private_dns_zone_name = azurerm_private_dns_zone.internal.name
   virtual_network_id = azurerm_virtual_network.hub.id
+  registration_enabled = true
   
   lifecycle {
     ignore_changes = [tags]
@@ -94,18 +95,16 @@ resource azurerm_private_dns_zone privatelink_zones {
 
 # deploys a DNS resolver in the hub that forwards to MS DNS by default and for private zones and then otherwise follows the variable rules
 module dns_resolver {
-  source = "github.com/in-the-keyhole/awg-appdev-modules//terraform/dns-resolver?ref=main"
+  source = "../../awg-appdev-modules/terraform/dns-resolver"
   name = var.default_name
   tags = var.default_tags
   resource_group = azurerm_resource_group.hub
   location = var.resource_location
   subnet = azurerm_subnet.dns
+  admin_username = "sysadmin"
+  admin_password = base64decode("SjY4TnhTOUcyUXhHczBHNyE=")
   addresses = var.dns_resolver_addresses
   rules = merge({ "." = [ "168.63.129.16" ]}, local.privatelink_zone_rules, var.dns_resolver_rules)
-}
-
-output dns_resolver_password {
-  value = nonsensitive(module.dns_resolver.password)
 }
 
 # calculate map of private zone name to resource
@@ -117,7 +116,7 @@ locals {
 
 # link each private DNS zone with the hub network
 resource azurerm_private_dns_zone_virtual_network_link privatelink {
-  for_each =  local.privatelink_zone_names
+  for_each = local.privatelink_zone_names
 
   name = "${local.privatelink_zones_by_name[each.key].name}-2-${azurerm_virtual_network.hub.name}"
   tags = var.default_tags
