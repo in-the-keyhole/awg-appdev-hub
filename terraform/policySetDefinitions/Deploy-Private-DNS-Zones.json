@@ -187,7 +187,8 @@
             "azureSynapseSQLODPrivateDnsZoneId": "privatelink.sql.azuresynapse.net",
             "azureVirtualDesktopHostpoolPrivateDnsZoneId": "privatelink.wvd.microsoft.com",
             "azureVirtualDesktopWorkspacePrivateDnsZoneId": "privatelink.wvd.microsoft.com",
-            "azureWebPrivateDnsZoneId": "privatelink.webpubsub.azure.com"
+            "azureWebPrivateDnsZoneId": "privatelink.webpubsub.azure.com",
+            "azurePrometheusPrivateDnsZoneId": "privatelink.{regionName}.prometheus.monitor.azure.com"
           },
           "metadata": {
             "displayName": "DNS Zone Names",
@@ -793,6 +794,15 @@
           "defaultValue": "",
           "metadata": {
             "displayName": "azureSiteRecoveryQueuePrivateDnsZoneId",
+            "strongType": "Microsoft.Network/privateDnsZones",
+            "description": "Private DNS Zone Identifier"
+          }
+        },
+        "azurePrometheusPrivateDnsZoneId": {
+          "type": "string",
+          "defaultValue": "",
+          "metadata": {
+            "displayName": "azurePrometheusPrivateDnsZoneId",
             "strongType": "Microsoft.Network/privateDnsZones",
             "description": "Private DNS Zone Identifier"
           }
@@ -1727,6 +1737,31 @@
             },
             "effect": {
               "value": "[parameters('effect')]"
+            }
+          }
+        },
+        {
+          "policyDefinitionReferenceId": "Deploy-Private-DNS-Generic",
+          "policyDefinitionId": "",
+          "definitionVersion": "1.*.*",
+          "parameters":{
+            "resourceType": {
+              "value": "Microsoft.Monitor/accounts"
+            },
+            "groupId": {
+              "value": "prometheusMetrics"
+            },
+            "privateDnsZoneId": {
+              "value": "[if(equals(parameters('dnsZoneSubscriptionId'), ''), parameters('azurePrometheusPrivateDnsZoneId'), format('/subscriptions/{0}/resourceGroups/{1}/providers/{2}/{3}', parameters('dnsZoneSubscriptionId'), toLower(parameters('dnsZoneResourceGroupName')), parameters('dnsZoneResourceType'), replace(replace(parameters('dnsZoneNames').azurePrometheusPrivateDnsZoneId, '{regionName}', parameters('dnsZoneRegion')), '{regionCode}', parameters('dnzZoneRegionShortNames')[parameters('dnsZoneRegion')])))]"
+            },
+            "effect": {
+              "value": "[parameters('effect')]"
+            },
+            "evaluationDelay": {
+              "value": "AfterProvisioningSuccess"
+            },
+            "location": {
+              "value": "[parameters('dnsZoneRegion')]"
             }
           }
         }

@@ -43,4 +43,9 @@ resource azurerm_private_endpoint storage_account {
   lifecycle {
     ignore_changes = [tags, private_dns_zone_group]
   }
+
+  depends_on = [
+    local.policy_deps,
+    azurerm_private_dns_zone_virtual_network_link.privatelink
+  ]
 }

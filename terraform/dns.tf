@@ -48,7 +48,8 @@ resource azurerm_private_dns_zone_virtual_network_link internal {
   }
 
   depends_on = [ 
-    azurerm_private_dns_zone.internal
+    azurerm_private_dns_zone.internal,
+    local.policy_deps
   ]
 }
 
@@ -69,7 +70,16 @@ locals {
     "privatelink.ncus.backup.windowsazure.com",
     "privatelink.openai.azure.com",
     "privatelink.azurecr.io",
-    "privatelink.southcentralus.azmk8s.io"
+    "privatelink.southcentralus.azmk8s.io",
+    "privatelink.northcentralus.azmk8s.io",
+    "privatelink.southcentralus.prometheus.monitor.azure.com",
+    "privatelink.northcentralus.prometheus.monitor.azure.com",
+    "privatelink.monitor.azure.com",
+    "privatelink.oms.opinsights.azure.com",
+    "privatelink.ods.opinsights.azure.com",
+    "privatelink.agentsvc.azure-automation.net",
+    "privatelink.grafana.azure.com",
+    "monitor.azure.com"
   ])
 }
 
@@ -91,6 +101,10 @@ resource azurerm_private_dns_zone privatelink_zones {
   lifecycle {
     ignore_changes = [tags]
   }
+
+  depends_on = [
+    local.policy_deps
+  ]
 }
 
 # deploys a DNS resolver in the hub that forwards to MS DNS by default and for private zones and then otherwise follows the variable rules
@@ -128,4 +142,8 @@ resource azurerm_private_dns_zone_virtual_network_link privatelink {
   lifecycle {
     ignore_changes = [tags]
   }
+
+  depends_on = [
+    local.policy_deps
+  ]
 }

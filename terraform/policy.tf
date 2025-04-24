@@ -1,35 +1,66 @@
+###
+# Import all policy definitions in the policyDefinitions directory.
+###
+
 locals {
-  deploy_private_dns_zones = jsondecode(file("./policySetDefinitions/Deploy-Private-DNS-Zones.json"))
+  policy_json_files = fileset(path.module, "policyDefinitions/*.json")
+  policy_json_data = [for f in local.policy_json_files : jsondecode(file("${path.module}/${f}"))]
+  policy_json_defs = {for f in local.policy_json_data : f.name => f }
 }
 
-resource azurerm_policy_set_definition deploy_private_dns_zones {
-  name = local.deploy_private_dns_zones.name
+resource azurerm_policy_definition policies {
+  for_each = local.policy_json_defs
 
-  policy_type  = local.deploy_private_dns_zones.properties.policyType
-  display_name = local.deploy_private_dns_zones.properties.displayName
-  description = local.deploy_private_dns_zones.properties.description
-  metadata = jsonencode(local.deploy_private_dns_zones.properties.metadata)
-  parameters = jsonencode(local.deploy_private_dns_zones.properties.parameters)
+  name = each.key
+  policy_type = each.value.properties.policyType
+  mode = each.value.properties.mode
+  display_name = each.value.properties.displayName
+  description = each.value.properties.description
+  metadata = jsonencode(each.value.properties.metadata)
+  parameters = jsonencode(each.value.properties.parameters)
+  policy_rule = jsonencode(each.value.properties.policyRule)
+}
+
+###
+# Import all policy set definitions in the policySetDefinitions directory.
+###
+
+locals {
+  policyset_json_files = fileset(path.module, "policySetDefinitions/*.json")
+  policyset_json_data = [for f in local.policyset_json_files : jsondecode(file("${path.module}/${f}"))]
+  policyset_json_defs = {for f in local.policyset_json_data : f.name => f}
+}
+
+resource azurerm_policy_set_definition policy_sets {
+  for_each = local.policyset_json_defs
+
+  name = each.key
+  policy_type  = each.value.properties.policyType
+  display_name = each.value.properties.displayName
+  description = each.value.properties.description
+  metadata = jsonencode(each.value.properties.metadata)
+  parameters = jsonencode(each.value.properties.parameters)
 
   dynamic policy_definition_reference {
-    for_each = [ for j in local.deploy_private_dns_zones.properties.policyDefinitions : j ]
+    for_each = [ for j in each.value.properties.policyDefinitions : j ]
 
     content {
       reference_id = policy_definition_reference.value.policyDefinitionReferenceId
-      policy_definition_id = policy_definition_reference.value.policyDefinitionId
-      parameter_values = jsonencode({
-        for n, v in policy_definition_reference.value.parameters : n => v
-      })
+      policy_definition_id = policy_definition_reference.value.policyDefinitionId != "" ? policy_definition_reference.value.policyDefinitionId : azurerm_policy_definition.policies[policy_definition_reference.value.policyDefinitionReferenceId].id
+      parameter_values = jsonencode(policy_definition_reference.value.parameters)
     }
   }
-
 }
+
+###
+# Assignments
+###
 
 resource azurerm_subscription_policy_assignment deploy_private_dns_zones {
   name = "deploy_private_dns_zones"
   location = var.metadata_location
 
-  policy_definition_id = azurerm_policy_set_definition.deploy_private_dns_zones.id
+  policy_definition_id = azurerm_policy_set_definition.policy_sets["Deploy-Private-DNS-Zones"].id
   subscription_id = "/subscriptions/${var.subscription_id}"
   
   parameters = jsonencode({
@@ -45,33 +76,34 @@ resource azurerm_subscription_policy_assignment deploy_private_dns_zones {
   })
 
   identity {
-    type = "SystemAssigned"
+    type = "UserAssigned"
+    identity_ids = [ azurerm_user_assigned_identity.hub.id ]
   }
 }
-
-# resource azurerm_subscription_policy_remediation deploy_private_dns_zones {
-#   for_each = { for k, v in local.deploy_private_dns_zones.properties.policyDefinitions : v.policyDefinitionReferenceId => v }
-
-#   name = "deploy_private_dns_zones__${replace(lower(each.key), "-", "_")}"
-#   subscription_id = "/subscriptions/${var.subscription_id}"
-#   policy_assignment_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.id
-#   policy_definition_reference_id = lower(each.key)
-# }
 
 resource azurerm_role_assignment deploy_private_dns_zones_contributor {
   role_definition_name = "Contributor"
   scope = "/subscriptions/${var.subscription_id}"
-  principal_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.identity[0].principal_id
+  principal_id = azurerm_user_assigned_identity.hub.principal_id
 }
 
 resource azurerm_role_assignment deploy_private_dns_zones_private_dns_contributor {
   role_definition_name = "Private DNS Zone Contributor"
   scope = "/subscriptions/${var.subscription_id}"
-  principal_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.identity[0].principal_id
+  principal_id = azurerm_user_assigned_identity.hub.principal_id
 }
 
 resource azurerm_role_assignment deploy_private_dns_zones_network_contributor {
   role_definition_name = "Network Contributor"
   scope = "/subscriptions/${var.subscription_id}"
-  principal_id = azurerm_subscription_policy_assignment.deploy_private_dns_zones.identity[0].principal_id
+  principal_id = azurerm_user_assigned_identity.hub.principal_id
+}
+
+locals {
+  policy_deps = [
+    azurerm_subscription_policy_assignment.deploy_private_dns_zones,
+    azurerm_role_assignment.deploy_private_dns_zones_contributor,
+    azurerm_role_assignment.deploy_private_dns_zones_private_dns_contributor,
+    azurerm_role_assignment.deploy_private_dns_zones_network_contributor
+  ]
 }
