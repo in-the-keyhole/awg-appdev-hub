@@ -1,5 +1,5 @@
 {
-    "name": "Deploy-Private-DNS-Zones",
+    "name": "DINE-Deploy-Private-DNS-Zones",
     "type": "Microsoft.Authorization/policySetDefinitions",
     "apiVersion": "2023-04-01",
     "scope": null,
@@ -16,6 +16,14 @@
         ]
       },
       "parameters": {
+        "evaluationDelay": {
+            "type": "String",
+            "metadata": {
+                "displayName": "Evaluation Delay",
+                "description": "The delay in evaluation of the policy. Review delay options at https://learn.microsoft.com/en-us/azure/governance/policy/concepts/effect-deploy-if-not-exists"
+            },
+            "defaultValue": "PT2M"
+        },
         "dnsZoneSubscriptionId": {
           "type": "string",
           "defaultValue": "",
@@ -1079,6 +1087,9 @@
             },
             "effect": {
               "value": "[parameters('effect')]"
+            },
+            "evaluationDelay": {
+              "value": "[parameters('evaluationDelay')]"
             }
           },
           "groupNames": []
@@ -1107,6 +1118,9 @@
             },
             "effect": {
               "value": "[parameters('effect')]"
+            },
+            "evaluationDelay": {
+              "value": "[parameters('evaluationDelay')]"
             }
           },
           "groupNames": []
@@ -1135,6 +1149,9 @@
             },
             "effect": {
               "value": "[parameters('effect')]"
+            },
+            "evaluationDelay": {
+              "value": "[parameters('evaluationDelay')]"
             }
           },
           "groupNames": []
@@ -1149,6 +1166,9 @@
             },
             "effect": {
               "value": "[parameters('effect')]"
+            },
+            "evaluationDelay": {
+              "value": "[parameters('evaluationDelay')]"
             }
           },
           "groupNames": []
@@ -1403,6 +1423,9 @@
             },
             "effect": {
               "value": "[parameters('effect')]"
+            },
+            "evaluationDelay": {
+              "value": "[parameters('evaluationDelay')]"
             }
           },
           "groupNames": []
@@ -1705,6 +1728,9 @@
             },
             "effect": {
               "value": "[parameters('effect')]"
+            },
+            "evaluationDelay": {
+              "value": "[parameters('evaluationDelay')]"
             }
           }
         },
@@ -1741,7 +1767,7 @@
           }
         },
         {
-          "policyDefinitionReferenceId": "Deploy-Private-DNS-Generic",
+          "policyDefinitionReferenceId": "DINE-Deploy-Private-DNS-Generic",
           "policyDefinitionId": "",
           "definitionVersion": "1.*.*",
           "parameters":{
@@ -1758,7 +1784,7 @@
               "value": "[parameters('effect')]"
             },
             "evaluationDelay": {
-              "value": "AfterProvisioningSuccess"
+              "value": "[parameters('evaluationDelay')]"
             },
             "location": {
               "value": "[parameters('dnsZoneRegion')]"

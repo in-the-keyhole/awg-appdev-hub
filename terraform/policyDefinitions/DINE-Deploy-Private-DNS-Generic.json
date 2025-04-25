@@ -1,5 +1,5 @@
 {
-    "name": "Deploy-Private-DNS-Generic",
+    "name": "DINE-Deploy-Private-DNS-Generic",
     "type": "Microsoft.Authorization/policyDefinitions",
     "apiVersion": "2021-06-01",
     "scope": null,

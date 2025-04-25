@@ -21,6 +21,10 @@ resource azurerm_policy_definition policies {
   policy_rule = jsonencode(each.value.properties.policyRule)
 }
 
+locals {
+  policy_by_name = {for i in azurerm_policy_definition.policies : i.name => i}
+}
+
 ###
 # Import all policy set definitions in the policySetDefinitions directory.
 ###
@@ -46,7 +50,7 @@ resource azurerm_policy_set_definition policy_sets {
 
     content {
       reference_id = policy_definition_reference.value.policyDefinitionReferenceId
-      policy_definition_id = policy_definition_reference.value.policyDefinitionId != "" ? policy_definition_reference.value.policyDefinitionId : azurerm_policy_definition.policies[policy_definition_reference.value.policyDefinitionReferenceId].id
+      policy_definition_id = lookup(local.policy_by_name, policy_definition_reference.value.policyDefinitionReferenceId, "") == "" ? policy_definition_reference.value.policyDefinitionId  : local.policy_by_name[policy_definition_reference.value.policyDefinitionReferenceId].id
       parameter_values = jsonencode(policy_definition_reference.value.parameters)
     }
   }
@@ -60,7 +64,7 @@ resource azurerm_subscription_policy_assignment deploy_private_dns_zones {
   name = "deploy_private_dns_zones"
   location = var.metadata_location
 
-  policy_definition_id = azurerm_policy_set_definition.policy_sets["Deploy-Private-DNS-Zones"].id
+  policy_definition_id = azurerm_policy_set_definition.policy_sets["DINE-Deploy-Private-DNS-Zones"].id
   subscription_id = "/subscriptions/${var.subscription_id}"
   
   parameters = jsonencode({
