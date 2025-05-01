@@ -17,6 +17,7 @@ param(
     
     [Parameter(Mandatory)][string]$MetadataLocation,
     [Parameter(Mandatory)][string]$ResourceLocation,
+    [Parameter(Mandatory)][string]$RootCaCerts,
 
     [Parameter(Mandatory)][string]$DnsZoneName,
     [Parameter(Mandatory)][string]$InternalDnsZoneName,
@@ -73,6 +74,7 @@ if ($Stage -eq 'all' -or $Stage -eq 'tf') {
         default_tags = $DefaultTags
         metadata_location = $MetadataLocation
         resource_location = $ResourceLocation
+        root_ca_certs = $RootCaCerts
         dns_zone_name = $DnsZoneName
         internal_dns_zone_name = $InternalDnsZoneName
         dns_resolver_addresses = $DnsResolverAddresses
