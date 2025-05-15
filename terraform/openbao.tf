@@ -157,7 +157,8 @@ module openbao {
   depends_on = [ 
     azurerm_role_assignment.openbao_key_vault_cert_user,
     azurerm_role_assignment.openbao_key_vault_secrets_user,
-    azurerm_role_assignment.openbao_key_vault_crypto_user
+    azurerm_role_assignment.openbao_key_vault_crypto_user,
+    azurerm_subnet_nat_gateway_association.default
   ]
 }
 

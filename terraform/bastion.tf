@@ -120,6 +120,10 @@ resource azurerm_linux_virtual_machine bastion {
   lifecycle {
     ignore_changes = [tags, identity]
   }
+
+  depends_on = [ 
+    azurerm_subnet_nat_gateway_association.bastion
+  ]
 }
 
 resource azurerm_virtual_machine_extension bastion_aad_login {

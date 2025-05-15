@@ -119,6 +119,10 @@ module dns_resolver {
   admin_password = base64decode("SjY4TnhTOUcyUXhHczBHNyE=")
   addresses = var.dns_resolver_addresses
   rules = merge({ "." = [ "168.63.129.16" ]}, local.privatelink_zone_rules, var.dns_resolver_rules)
+
+  depends_on = [ 
+    azurerm_subnet_nat_gateway_association.dns
+  ]
 }
 
 # calculate map of private zone name to resource
