@@ -1,0 +1,116 @@
+parameters:
+- name: environment
+  type: string
+- name: subscription
+  type: string
+  
+jobs:
+- deployment: deploy
+  displayName: Deploy
+  pool:
+    vmImage: 'ubuntu-24.04'
+  environment: ${{ parameters['environment'] }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - download: current
+          artifact: artifacts
+
+        - bash: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          displayName: Upgrade Azure CLI
+
+        - task: AzurePowerShell@5
+          name: deploy
+          displayName: Deploy
+          inputs:
+            pwsh: true
+            azureSubscription: ${{ parameters['subscription'] }}
+            azurePowerShellVersion: OtherVersion
+            preferredAzurePowerShellVersion: 13.0.0
+            workingDirectory: $(Pipeline.Workspace)/artifacts
+            scriptType: inlineScript
+            inline: |
+                function ToStringIfNotEmpty([string]$value) {
+                    if ($value -eq $null -or $value -eq "" -or $value.StartsWith("$")) {
+                        return $null
+                    } else {
+                        return $value
+                    }
+                }
+
+                function ToSecureStringIfNotEmpty([string]$value) {
+                    if ($value -eq $null -or $value -eq "" -or $value.StartsWith("$")) {
+                        return $null
+                    } else {
+                        return (ConvertTo-SecureString -AsPlainText $value -Force)
+                    }
+                }
+
+                function ToBooleanIfNotEmpty([string]$value) {
+                    if ($value -eq $null -or $value -eq "" -or $value.StartsWith("$")) {
+                        return $null
+                    } else {
+                        return [bool]::Parse($value)
+                    }
+                }
+
+                function ToInt32IfNotEmpty([string]$value) {
+                    if ($value -eq $null -or $value -eq "" -or $value.StartsWith("$")) {
+                        return $null
+                    } else {
+                        return [int]::Parse($value)
+                    }
+                }
+
+                function ToInt64IfNotEmpty([string]$value) {
+                    if ($value -eq $null -or $value -eq "" -or $value.StartsWith("$")) {
+                        return $null
+                    } else {
+                        return [long]::Parse($value)
+                    }
+                }
+
+                function ToSingleIfNotEmpty([string]$value) {
+                    if ($value -eq $null -or $value -eq "" -or $value.StartsWith("$")) {
+                        return $null
+                    } else {
+                        return [float]::Parse($value)
+                    }
+                }
+
+                function ToBoolIfTrue([string]$value) {
+                    if ($value -eq $null -or $value -ne 'true') {
+                        return $false
+                    } else {
+                        return $true
+                    }
+                }
+
+                $arg = @{
+                    DefaultName                                         = ToStringIfNotEmpty('$(DefaultName)')
+                    TfStateResourceGroupName                            = ToStringIfNotEmpty('$(TfStateResourceGroupName)')
+                    TfStateStorageAccountName                           = ToStringIfNotEmpty('$(TfStateResourceGroupName)')
+                    DefaultName                                         = ToStringIfNotEmpty('$(TfStateResourceGroupName)')
+                    ReleaseName                                         = ToStringIfNotEmpty('$(GitVersion.FullSemVer)')
+                    DefaultTags                                         = (ConvertFrom-Json "$(DefaultTags)")
+                    MetadataLocation                                    = ToStringIfNotEmpty('$(MetadataLocation)')
+                    ResourceLocation                                    = ToStringIfNotEmpty('$(ResourceLocation)')
+                    RootCaCerts                                         = ToStringIfNotEmpty('$(RootCaCerts)')
+                    DnsZoneName                                         = ToStringIfNotEmpty('$(DnsZoneName)')
+                    InternalDnsZoneName                                 = ToStringIfNotEmpty('$(InternalDnsZoneName)')
+                    DnsResolverAddresses                                = (ConvertFrom-Json "$(DnsResolverAddresses)")
+                    DnsResolverRules                                    = (ConvertFrom-Json "$(DnsResolverRules)")
+                    VnetDnsServers                                      = (ConvertFrom-Json "$(VnetDnsServers)")
+                    VnetAddressPrefix                                   = ToStringIfNotEmpty('$(VnetAddressPrefix)')
+                    DefaultVnetSubnetAddressPrefix                      = ToStringIfNotEmpty('$(DefaultVnetSubnetAddressPrefix)')
+                    PrivateVnetSubnetAddressPrefix                      = ToStringIfNotEmpty('$(PrivateVnetSubnetAddressPrefix)')
+                    DnsVnetSubnetAddressPrefix                          = ToStringIfNotEmpty('$(DnsVnetSubnetAddressPrefix)')
+                    BastionVnetSubnetAddressPrefix                      = ToStringIfNotEmpty('$(BastionVnetSubnetAddressPrefix)')
+                    VnetPeers                                           = (ConvertFrom-Json "$(VnetPeers)")
+                    DnsPeers                                            = (ConvertFrom-Json "$(DnsPeers)")
+                }
+
+                Write-Debug $arg
+                $(Pipeline.Workspace)/artifacts/deploy.ps1 @arg
+                
