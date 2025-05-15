@@ -45,7 +45,7 @@ stages:
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   displayName: Deploy
   variables:
-  - group: awg-appdev-hub
+  - group: awg-appdev-hub-sand
   jobs:
   - template: deploy.yml
     parameters:

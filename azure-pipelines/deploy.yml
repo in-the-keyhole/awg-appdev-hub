@@ -88,10 +88,9 @@ jobs:
                 }
 
                 $arg = @{
-                    DefaultName                                         = ToStringIfNotEmpty('$(DefaultName)')
                     TfStateResourceGroupName                            = ToStringIfNotEmpty('$(TfStateResourceGroupName)')
-                    TfStateStorageAccountName                           = ToStringIfNotEmpty('$(TfStateResourceGroupName)')
-                    DefaultName                                         = ToStringIfNotEmpty('$(TfStateResourceGroupName)')
+                    TfStateStorageAccountName                           = ToStringIfNotEmpty('$(TfStateStorageAccountName)')
+                    DefaultName                                         = ToStringIfNotEmpty('$(DefaultName)')
                     ReleaseName                                         = ToStringIfNotEmpty('$(GitVersion.FullSemVer)')
                     DefaultTags                                         = (ConvertFrom-Json "$(DefaultTags)")
                     MetadataLocation                                    = ToStringIfNotEmpty('$(MetadataLocation)')
